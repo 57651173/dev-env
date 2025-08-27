@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户API测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            margin: 5px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .result {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 3px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        input {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            width: 200px;
+        }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+    </style>
+</head>
+<body>
+    <h1>用户管理 API 测试</h1>
+    
+    <div class="test-section">
+        <h3>1. 获取所有用户</h3>
+        <button onclick="getAllUsers()">获取用户列表</button>
+        <div id="getAllResult" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>2. 创建新用户</h3>
+        <input type="text" id="userName" placeholder="姓名" value="测试用户">
+        <input type="email" id="userEmail" placeholder="邮箱" value="test@example.com">
+        <input type="tel" id="userPhone" placeholder="电话" value="13800138000">
+        <button onclick="createUser()">创建用户</button>
+        <div id="createResult" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>3. 获取单个用户</h3>
+        <input type="number" id="getUserId" placeholder="用户ID" value="1">
+        <button onclick="getUser()">获取用户</button>
+        <div id="getUserResult" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>4. 更新用户</h3>
+        <input type="number" id="updateUserId" placeholder="用户ID" value="1">
+        <input type="text" id="updateUserName" placeholder="新姓名" value="更新后的姓名">
+        <input type="email" id="updateUserEmail" placeholder="新邮箱" value="updated@example.com">
+        <input type="tel" id="updateUserPhone" placeholder="新电话" value="13900139000">
+        <button onclick="updateUser()">更新用户</button>
+        <div id="updateResult" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>5. 删除用户</h3>
+        <input type="number" id="deleteUserId" placeholder="用户ID">
+        <button onclick="deleteUser()">删除用户</button>
+        <div id="deleteResult" class="result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080/project1/api/users';
+        
+        // 显示结果
+        function showResult(elementId, data, isSuccess = true) {
+            const element = document.getElementById(elementId);
+            const className = isSuccess ? 'success' : 'error';
+            element.innerHTML = `<span class="${className}">${JSON.stringify(data, null, 2)}</span>`;
+        }
+        
+        // 获取所有用户
+        async function getAllUsers() {
+            try {
+                const response = await fetch(API_BASE);
+                const data = await response.json();
+                showResult('getAllResult', data, data.success);
+            } catch (error) {
+                showResult('getAllResult', { error: error.message }, false);
+            }
+        }
+        
+        // 创建用户
+        async function createUser() {
+            const userData = {
+                name: document.getElementById('userName').value,
+                email: document.getElementById('userEmail').value,
+                phone: document.getElementById('userPhone').value
+            };
+            
+            try {
+                const response = await fetch(API_BASE, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(userData)
+                });
+                const data = await response.json();
+                showResult('createResult', data, data.success);
+                if (data.success) {
+                    getAllUsers(); // 刷新用户列表
+                }
+            } catch (error) {
+                showResult('createResult', { error: error.message }, false);
+            }
+        }
+        
+        // 获取单个用户
+        async function getUser() {
+            const userId = document.getElementById('getUserId').value;
+            try {
+                const response = await fetch(`${API_BASE}/${userId}`);
+                const data = await response.json();
+                showResult('getUserResult', data, data.success);
+            } catch (error) {
+                showResult('getUserResult', { error: error.message }, false);
+            }
+        }
+        
+        // 更新用户
+        async function updateUser() {
+            const userId = document.getElementById('updateUserId').value;
+            const userData = {
+                name: document.getElementById('updateUserName').value,
+                email: document.getElementById('updateUserEmail').value,
+                phone: document.getElementById('updateUserPhone').value
+            };
+            
+            try {
+                const response = await fetch(`${API_BASE}/${userId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(userData)
+                });
+                const data = await response.json();
+                showResult('updateResult', data, data.success);
+                if (data.success) {
+                    getAllUsers(); // 刷新用户列表
+                }
+            } catch (error) {
+                showResult('updateResult', { error: error.message }, false);
+            }
+        }
+        
+        // 删除用户
+        async function deleteUser() {
+            const userId = document.getElementById('deleteUserId').value;
+            if (!userId) {
+                showResult('deleteResult', { error: '请输入用户ID' }, false);
+                return;
+            }
+            
+            if (!confirm(`确定要删除用户ID ${userId} 吗？`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/${userId}`, {
+                    method: 'DELETE'
+                });
+                const data = await response.json();
+                showResult('deleteResult', data, data.success);
+                if (data.success) {
+                    getAllUsers(); // 刷新用户列表
+                }
+            } catch (error) {
+                showResult('deleteResult', { error: error.message }, false);
+            }
+        }
+        
+        // 页面加载时自动获取用户列表
+        window.onload = function() {
+            getAllUsers();
+        };
+    </script>
+</body>
+</html>
