@@ -6,13 +6,14 @@ services:
     build: ./nginx
     container_name: nginx
     ports:
-      - "80:80"
+      - "0.0.0.0:8080:80"
     volumes:
       - ./projects:/var/www/html
       - ./nginx/conf.d:/etc/nginx/conf.d
     depends_on:
       - php72
       - php74
+      - php82
     networks:
       - backend
 
@@ -20,7 +21,7 @@ services:
   # PHP 7.2
   # ======================
   php72:
-    image: php:7.2-fpm
+    build: ./php72
     container_name: php72
     volumes:
       - ./projects/project1:/var/www/html/project1
@@ -31,24 +32,46 @@ services:
   # PHP 7.4
   # ======================
   php74:
-    image: php:7.4-fpm
+    build: ./php74
     container_name: php74
     volumes:
-      - ./projects/project1:/var/www/html/project1
+      - ./projects/project2:/var/www/html/project2
     networks:
       - backend
 
   # ======================
-  # MySQL 5.7
+  # PHP 8.2
+  # ======================
+  php82:
+    build: ./php82
+    container_name: php82
+    volumes:
+      - ./projects/project3:/var/www/html/project3
+    networks:
+      - backend
+
+  # ======================
+  # MySQL 5.7 (使用MariaDB 10.2替代)
   # ======================
   mysql57:
-    image: mysql:5.7
+    image: mariadb:10.2  # MacOS 使用MariaDB 10.2，兼容MySQL 5.7
+    # image: mysql:5.7  # Linux|Windows 使用MySQL 5.7
     container_name: mysql57
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: db57
+      MYSQL_USER: user57
+      MYSQL_PASSWORD: pass57
     ports:
-      - "3307:3306"
+      - "0.0.0.0:3307:3306"
+    volumes:
+      - ./mysql57/data:/var/lib/mysql  # 直接映射到宿主机目录
+      - ./mysql57/conf.d:/etc/mysql/conf.d
+      - ./mysql57/logs:/var/log/mysql  # 日志也映射出来
+    command: --default-authentication-plugin=mysql_native_password
+             --log-error=/var/log/mysql/error.log
+             --slow-query-log=1
+             --slow-query-log-file=/var/log/mysql/slow.log
     networks:
       - backend
 
@@ -57,12 +80,24 @@ services:
   # ======================
   mysql8:
     image: mysql:8.0
+    # image: mysql:8.0  # Linux|Windows 使用MySQL 8.0
+    # image: mariadb:10.2  # MacOS 使用MariaDB 10.2，兼容MySQL 8.0
     container_name: mysql8
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: db80
+      MYSQL_USER: user80
+      MYSQL_PASSWORD: pass80
     ports:
-      - "3308:3306"
+      - "0.0.0.0:3308:3306"
+    volumes:
+      - ./mysql8/data:/var/lib/mysql  # 直接映射到宿主机目录
+      - ./mysql8/conf.d:/etc/mysql/conf.d
+      - ./mysql8/logs:/var/log/mysql  # 日志也映射出来
+    command: --default-authentication-plugin=mysql_native_password
+             --log-error=/var/log/mysql/error.log
+             --slow-query-log=1
+             --slow-query-log-file=/var/log/mysql/slow.log
     networks:
       - backend
 
