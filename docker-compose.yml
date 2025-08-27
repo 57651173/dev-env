@@ -1,0 +1,71 @@
+services:
+  # ======================
+  # Nginx 网关
+  # ======================
+  nginx:
+    build: ./nginx
+    container_name: nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./projects:/var/www/html
+      - ./nginx/conf.d:/etc/nginx/conf.d
+    depends_on:
+      - php72
+      - php74
+    networks:
+      - backend
+
+  # ======================
+  # PHP 7.2
+  # ======================
+  php72:
+    image: php:7.2-fpm
+    container_name: php72
+    volumes:
+      - ./projects/project1:/var/www/html/project1
+    networks:
+      - backend
+
+  # ======================
+  # PHP 7.4
+  # ======================
+  php74:
+    image: php:7.4-fpm
+    container_name: php74
+    volumes:
+      - ./projects/project1:/var/www/html/project1
+    networks:
+      - backend
+
+  # ======================
+  # MySQL 5.7
+  # ======================
+  mysql57:
+    image: mysql:5.7
+    container_name: mysql57
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: db57
+    ports:
+      - "3307:3306"
+    networks:
+      - backend
+
+  # ======================
+  # MySQL 8.0
+  # ======================
+  mysql8:
+    image: mysql:8.0
+    container_name: mysql8
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: db80
+    ports:
+      - "3308:3306"
+    networks:
+      - backend
+
+networks:
+  backend:
+    driver: bridge
